@@ -1,1 +1,1 @@
-console.log('Working');
+const watcher = require('./InternetWatcher');
