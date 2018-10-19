@@ -30,7 +30,7 @@ const fileHeaders = `Original Url, Status Code, Final Url, Status\n`
 var urlObjArray = [];
 var errorObjArray = [];
 
-var chunk = 58;
+var chunk = 300;
 var index = 0;
 
 var startIndex = 0;
@@ -47,12 +47,15 @@ console.log("Program start : " + startTime);
 rl.on("line", path => {
   let tempObj = {
     path: path,
+    originalPath: '',
     index: -1,
     statusCode: -1,
     finialStausCode: -1,
-    finalUrl: ""
+    finalUrl: "",
+    redirected: false
   };
   tempObj.index = index++;
+  tempObj.originalPath = path;
   tempObj.path = path;
   urlObjArray.push(tempObj);
 });
@@ -62,6 +65,11 @@ rl.on("close", () => {
 });
 
 function propagateRequests(startIndex, chunk) {
+
+  if (sentRequest == urlObjArray.length) {
+    let endTime = new Date().toLocaleTimeString();
+    console.log(`${startTime} ..... ${endTime}`);
+  }
 
   let subQueue = urlObjArray.slice(startIndex, chunk);
 
@@ -76,10 +84,26 @@ function propagateRequests(startIndex, chunk) {
             returnedRequests
         );
 
-        let str = `${host}/${obj.path}, ${res.statusCode}, ${
-          res.headers.location
-        }, 200\n`;
-        append(resultPath + outputFile, str);
+        obj.finialStausCode = res.statusCode;
+
+        if (res.statusCode != 301 && res.statusCode != 307) {
+          let str = ''
+          if (obj.redirected) {
+            str = `${host}/${obj.originalPath}, ${obj.statusCode}, ${host}/${obj.path}, ${obj.finialStausCode}\n`
+          } else {
+            str = `${host}/${obj.path}, ${res.statusCode}, ${res.headers.location}, ${res.statusCode}\n`;
+          }
+           append(resultPath + outputFile, str);
+        } else {
+          console.log('🧐 trace redirects');
+          //Now you need to change the properties in the urlObj then put it back
+          //In the end of the que.
+          obj.path = getPath(res.headers.location);
+          obj.statusCode = res.statusCode;
+          obj.finialStausCode = -1;
+          obj.redirected = true;
+          urlObjArray.push(obj);
+        }
         singleRequest();
       })
       .catch(err => {
@@ -96,7 +120,7 @@ function propagateRequests(startIndex, chunk) {
           let str =  `${obj.path}, ${err.code}\n`
           append(resultPath + errorFile, str);
           console.log(
-            "\nERROR CODE 02 " + "REQUEST RETURNED : " + returnedRequests + ' ' + err.code
+            "\nERROR CODE 02 " + "REQUEST RETURNED : " + returnedRequests + ' ' + err
           );
         }
       });
@@ -119,8 +143,8 @@ function get(urlObj) {
   return new Promise((resolve, reject) => {
     https
       .get(options, res => {
-        res.on("data", data => {
-          returnedRequests++;
+        returnedRequests++;
+        res.on('data', (data) => {
           resolve(res);
         });
       })
@@ -140,11 +164,12 @@ function append(file, str) {
 }
 
 function singleRequest() {
-  if (sentRequest == urlObjArray.length) {
-    let endTime = new Date().toLocaleTimeString();
-    console.log(`${startTime} ..... ${endTime}`);
-  }
   startIndex = chunk;
   chunk += 1;
   propagateRequests(startIndex, chunk);
+}
+
+function getPath(url) {
+  let strLen = `https://${host}/`.length;
+  return url.substring(strLen);
 }
