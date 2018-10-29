@@ -1,204 +1,190 @@
-// Core Libraries
-const fs = require("fs");
-const readline = require("readline");
-const https = require("https");
+const fs = require('fs');
+const https = require('https');
+const readline = require('readline');
+
 // Custom modules
 const cridentials = require("./credentials/credentials.js");
 
-// Program variables
-const resultPath = "./results/";
-const resourcesPath = "./resources/";
-
-const inputFile = resourcesPath + process.argv[2];
+const inputFile = process.argv[2];
 const outputFile = process.argv[3];
-const errorFile = `error_${outputFile}`;
 
-const inStream = fs.createReadStream(inputFile);
+const resultPath = './results/';
+const resourcePath = './resources/';
+const inStream = fs.createReadStream(resourcePath + inputFile);
 const outStream = fs.createWriteStream(resultPath + outputFile);
-const errStream = fs.createWriteStream(resultPath + errorFile);
 
 const rl = readline.createInterface(inStream, outStream);
 
-const username = cridentials.username;
+const username = cridentials.userName;
 const password = cridentials.password;
+const auth = "Basic " + new Buffer(`${username}:${password}`).toString("base64");
 
-const auth =
-  "Basic " + new Buffer(`${username}:${password}`).toString("base64");
-
-const fileHeaders = `Original Url, Status Code, Final Url, Status\n`;
+const bulk = 100;
 
 var urlObjArray = [];
-var errorObjArray = [];
+var numUrls = 0;
+var sentReq = 0;
+var returnedReq = 0;
+var linkOfDeathIndex = 0;
+var index = 0; 
+var startTime = getTime();
 
-//// TODO: dynamically decide the number of chunk
-var chunk = 200;
-var index = 0;
-
-var numberOfUrls = 0;
-
-var startIndex = 0;
-
-var returnedRequests = 0;
-var sentRequest = 0;
-
-let startTime = new Date().toLocaleTimeString();
-
-//Writes the headers to the output file
-append(resultPath + outputFile, fileHeaders);
-
-console.log("Program start : " + startTime);
-rl.on("line", line => {
-  numberOfUrls++;
-  //line = encodeURI(line);
-  const path = line.substring(line.indexOf(".com/") + 5);
-  let tempObj = {
-    path: path,
-    numFailed: -1,
-    originalPath: "",
-    index: -1,
-    statusCode: -1,
-    finialStausCode: -1,
-    finalUrl: "",
-    redirected: false,
-    host: ""
-  };
-  tempObj.index = index++;
-  tempObj.originalPath = path;
-  tempObj.path = path;
-  tempObj.host = line.substring("https://".length, line.indexOf(".com/") + 4);
-  urlObjArray.push(tempObj);
+rl.on("line", (url) => {
+  enQue(url,numUrls);
+  numUrls++;
 });
 
-rl.on("close", () => {
-  chunk = (numberOfUrls > 200)? 200 : numberOfUrls;
-  propagateRequests(startIndex, chunk);
+rl.on("close", ()=>{
+  inStream.close();
+  main();
 });
 
-function propagateRequests(startIndex, chunk) {
-  if (sentRequest == urlObjArray.length) {
-    return;
+function enQue(url,index) {
+  let urlInfo = getUrlInfo(url);
+  let urlObj = new urlObjConstruct(urlInfo.host,urlInfo.path,index);
+  urlObjArray.push(urlObj);
+}
+
+function urlObjConstruct(host,path,index) {
+  let urlObj = {};
+  urlObj.host = host;
+  urlObj.path = path;
+  urlObj.originalPath = '';
+  urlObj.finalUrl = '';
+  urlObj.redirected = false;
+  urlObj.index = index;
+  urlObj.statusCode = -1;
+  urlObj.finalStatusCode = -1;
+  urlObj.numFailed = -1;
+  urlObj.numberOfRedirects = 0;
+
+  return urlObj;
+}
+
+function getUrlInfo(url) {
+  let hostBegin = url.indexOf('https://');
+  let hostEnd = url.indexOf('.com/');
+  let host = url.substring(hostBegin + getLength('https://') , hostEnd + getLength('.com') ) ;
+  let path = url.substring(url.indexOf(host) + getLength(host));
+  if (hostEnd === -1) {
+      path = '';
   }
-  let subQueue = urlObjArray.slice(startIndex, chunk);
+  return { host, path };
+}
 
-  subQueue.forEach(obj => {
-    get(obj)
-      .then(res => {
-        console.log(
-          res.statusCode +
-            " found for url at index[" +
-            obj.index +
-            "]\nREQUEST RETURNED : " +
-            returnedRequests
-        );
+function getLength(string) {
+  return string.length;
+}
 
-        obj.finialStausCode = res.statusCode;
+function main() {
+  console.log('I got called. Time for the meaty stuff');
+  //Writes the headers to the output file
+  append(outputFile, `Original Url, Status Code, Final Url, Status\n`);
+  if (numUrls > bulk) {
+    for (let i = 0 ; i < bulk ; i++){
+      send(urlObjArray[index]);
+      index++;
+    }
+  } else {
+    send(urlObjArray[index]);
+  }
 
-        if (res.statusCode != 301 && res.statusCode != 307) {
-          let str = "";
-          if (obj.redirected) {
-            //// TODO: if 200 make sure you display 200 as well
-            str = `${obj.host}/${obj.originalPath}, ${obj.statusCode}, ${
-              obj.host
-            }/${obj.path}, ${obj.finialStausCode}\n`;
-          } else {
-            str = `${obj.host}/${obj.path}, ${
-              res.statusCode
-            }, 'no redirection', ${res.statusCode}\n`;
-          }
-          append(resultPath + outputFile, str);
-        } else {
-          console.log("🧐 trace redirects");
-          //Now you need to change the properties in the urlObj then put it back
-          //In the end of the que.
-          obj.path = getPath(obj.host, res.headers.location);
-          obj.statusCode = res.statusCode;
-          obj.finialStausCode = -1;
-          obj.redirected = true;
-          urlObjArray.push(obj);
-        }
-        singleRequest();
-        return;
-      })
-      .catch(err => {
-        let str = `${obj.host}/${obj.path}, ${err.code} \n`;
-        if (
-          (err.code === "ETIMEDOUT" || err.code === "ECONNRESET") &&
-          obj.numFailed < 2
-        ) {
-          console.log(
-            obj.path +
-              ">>>>>TIME OUT || Socket hang up >> Added to the end of the queue " +
-              err.code
-          );
-          urlObjArray.push(obj);
-          singleRequest();
-        } else {
-          let str = `https://${obj.host}${obj.path}, ${err.code}\n`;
-          append(resultPath + errorFile, str);
-          console.log(
-            "\nERROR CODE 02 " +
-              "REQUEST RETURNED : " +
-              returnedRequests +
-              " " +
-              err +
-              "URL: " +
-              str
-          );
-          return;
-        }
-      });
+
+}
+
+function send(urlObj) {
+  console.log('Sending request to link num# ' + urlObj.index);
+  console.log('Number of requests sent = ' + sentReq);
+  console.log('Number of returned Requests = ' + returnedReq);
+  get(urlObj);
+}
+
+function append(filePath, str) {
+  fs.appendFile(filePath, str, err => {
+    if (err) console.log(err);
   });
 }
 
+function getTime() {
+  return new Date().toLocaleTimeString();
+}
+
 function get(urlObj) {
-  sentRequest++;
-  console.log(`Number of requests sent: ------------> ${sentRequest}`);
+  sentReq++;
+  console.log('Request sent to index ' + urlObj.index);
+
   const options = {
-    method: "GET",
+    method: "HEAD",
     host: urlObj.host,
-    path: "/" + urlObj.path,
-    timeout: 30000,
+    path: urlObj.path,
     followAllRedirects: true,
     headers: {
       Authorization: auth
     }
   };
-  return new Promise((resolve, reject) => {
-    https
-      .get(options, res => {
-        returnedRequests++;
-        resolve(res);
-      })
-      .on("error", err => {
-        returnedRequests++;
-        urlObj.numFailed++;
-        reject(err);
-      });
+
+  var req = https.request(options, (res) => {
+    returnedReq++;
+    handleResponse(urlObj,res);
   });
+
+  req.on('error', (err)=> {
+    returnedReq++;
+    handleError(urlObj,err);
+  });
+
+  req.setTimeout(4000,()=>{
+    console.log('time out');
+    req.abort();
+  });
+  req.end();
 }
 
-function append(file, str) {
-  fs.appendFile(file, str, err => {
-    if (err) {
-      console.log(err);
+
+function handleResponse(urlObj, res) {
+  console.log('Handling response ');
+  urlObj.finalStatusCode = res.statusCode;
+
+  if ((res.statusCode >= 400 || res.statusCode <= 200  || urlObj.numberOfRedirects > 2)) {
+    //this means the link already has a result
+    if (urlObj.redirected) {
+      str = `${urlObj.host}${urlObj.originalPath}, ${urlObj.statusCode}, ${urlObj.host}${urlObj.path}, ${urlObj.finalStatusCode}\n`;
+    } else {
+      str = `${urlObj.host}${urlObj.path}, ${res.statusCode}, 'no redirection', ${res.statusCode}\n`;
     }
-  });
+    append(resultPath + outputFile, `${str}`);
+  } else {
+    let urlInfo = getUrlInfo(res.headers.location);
+    urlObj.originalPath = urlObj.path;
+    urlObj.statusCode = res.statusCode;
+    urlObj.path = urlInfo.path;
+    urlObj.redirected = true;
+    urlObj.numberOfRedirects++;
+    urlObjArray.push(urlObj);
+  }
+  hasNext();
 }
 
-function singleRequest() {
-  if (sentRequest != urlObjArray.length) {
-    startIndex = chunk;
-    chunk += 1;
-    propagateRequests(startIndex, chunk);
+function hasNext() {
+  if (index != urlObjArray.length - 1) {
+      console.log('Sendnig new request ');
+      send(urlObjArray[index++]);
+
   } else {
-    console.log("ending");
-    let endTime = new Date().toLocaleTimeString();
-    console.log(`${startTime} ..... ${endTime}`);
-    return;
+    console.log('Do exit stuff');
+    console.log(startTime + '...'+ getTime());
   }
 }
 
-function getPath(host, url) {
-  let strLen = `https://${host}/`.length;
-  return url.substring(strLen);
+function handleError(urlObj, err){
+  console.log('Handling error');
+  urlObj.numFailed++;
+  if ( (err.code === "ETIMEDOUT" || err.code === "ECONNRESET") && (urlObj.numFailed < 2) ) {
+    console.log('retry');
+    urlObjArray.push(urlObj);
+  } else {
+    console.log('Dead link ' + err);
+    append(resultPath + 'error_' + outputFile, `${urlObj.host}${urlObj.path}, ${err}`);
+  }
+  hasNext();
 }
