@@ -2,9 +2,6 @@ const fs = require('fs');
 const https = require('https');
 const readline = require('readline');
 
-// Custom modules
-const cridentials = require("./credentials/credentials.js");
-
 const inputFile = process.argv[2];
 const outputFile = process.argv[3];
 
@@ -15,8 +12,8 @@ const outStream = fs.createWriteStream(resultPath + outputFile);
 
 const rl = readline.createInterface(inStream, outStream);
 
-const username = cridentials.userName;
-const password = cridentials.password;
+const username = ``;
+const password = ``;
 const auth = "Basic " + new Buffer(`${username}:${password}`).toString("base64");
 
 const bulk = 100;
@@ -26,7 +23,7 @@ var numUrls = 0;
 var sentReq = 0;
 var returnedReq = 0;
 var linkOfDeathIndex = 0;
-var index = 0; 
+var index = 0; //Trial
 var startTime = getTime();
 
 rl.on("line", (url) => {
@@ -41,12 +38,13 @@ rl.on("close", ()=>{
 
 function enQue(url,index) {
   let urlInfo = getUrlInfo(url);
-  let urlObj = new urlObjConstruct(urlInfo.host,urlInfo.path,index);
+  let urlObj = new urlObjConstruct(url,urlInfo.host,urlInfo.path,index);
   urlObjArray.push(urlObj);
 }
 
-function urlObjConstruct(host,path,index) {
+function urlObjConstruct(url,host,path,index) {
   let urlObj = {};
+  urlObj.fullURL = url;
   urlObj.host = host;
   urlObj.path = path;
   urlObj.originalPath = '';
@@ -79,7 +77,7 @@ function getLength(string) {
 function main() {
   console.log('I got called. Time for the meaty stuff');
   //Writes the headers to the output file
-  append(outputFile, `Original Url, Status Code, Final Url, Status\n`);
+  append(resultPath + outputFile, `Original Url\t Status Code\t Final Url\t Status\n`);
   if (numUrls > bulk) {
     for (let i = 0 ; i < bulk ; i++){
       send(urlObjArray[index]);
@@ -148,9 +146,10 @@ function handleResponse(urlObj, res) {
   if ((res.statusCode >= 400 || res.statusCode <= 200  || urlObj.numberOfRedirects > 2)) {
     //this means the link already has a result
     if (urlObj.redirected) {
-      str = `${urlObj.host}${urlObj.originalPath}, ${urlObj.statusCode}, ${urlObj.host}${urlObj.path}, ${urlObj.finalStatusCode}\n`;
+
+      str = `${urlObj.fullURL}\t ${urlObj.statusCode}\t ${urlObj.host}${urlObj.path}\t ${urlObj.finalStatusCode}\n`.toString('utf8');
     } else {
-      str = `${urlObj.host}${urlObj.path}, ${res.statusCode}, 'no redirection', ${res.statusCode}\n`;
+      str = `${urlObj.fullURL}\t ${res.statusCode}\t 'no redirection'\t ${res.statusCode}\n`.toString('utf8');
     }
     append(resultPath + outputFile, `${str}`);
   } else {
@@ -184,7 +183,7 @@ function handleError(urlObj, err){
     urlObjArray.push(urlObj);
   } else {
     console.log('Dead link ' + err);
-    append(resultPath + 'error_' + outputFile, `${urlObj.host}${urlObj.path}, ${err}`);
+    append(resultPath + 'error_' + outputFile, `${urlObj.fullURL}\t ${err}\n`);
   }
   hasNext();
 }
