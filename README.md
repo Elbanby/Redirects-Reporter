@@ -81,27 +81,27 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
 
 ### Solutions
 
-    1- If your server can handle more than that without timing out constantly
-       and closing the socket, feel free to increase the value of the 'bulk'
-       variable in the script.
+  1- If your server can handle more than that without timing out constantly
+     and closing the socket, feel free to increase the value of the 'bulk'
+     variable in the script.
 
 
-    2- Implement a function that sends the requests with http if the urls are
-       using http.
+  2- Implement a function that sends the requests with http if the urls are
+     using http.
 
 
-    N.B: There is a quicker fix for the http problem. You can go on the script
-         and change the following
+  N.B: There is a quicker fix for the http problem. You can go on the script
+       and change the following
 
-    ```
-      //original - line 2
-      const https = require('https');
+  ```
+   //original - line 2
+   const https = require('https');
 
-      //change it to
-      const https = require('http');
-    ```
-    Make sure you only change the require https to http and not the
-    variable name, if you chose to go for the quick fix.
+   //change it to
+   const https = require('http');
+ ```
+   Make sure you only change the require https to http and not the
+   variable name, if you chose to go for the quick fix.
 
 # Extra Modifications
 ## On the next version:
