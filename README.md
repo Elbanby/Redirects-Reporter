@@ -18,12 +18,12 @@ set and it tries to test them as fast as possible.
 
   1- Navigate to where the folder is located.
 
-  2- Add all your urls to the resources folder and save it as an .csv file
+  2- Add all your urls to the resources folder and save it as an .txt file
 
   3- run the following command
 
   ```
-    node index.js input.csv result.txt
+    node index.js input.txt result.txt
   ```
 
   N.B: For the input and output files you can name them anything you like.
@@ -40,7 +40,7 @@ set and it tries to test them as fast as possible.
 
 
   ```
-    node index.js input.csv result.txt
+    node index.js input.txt result.txt
   ```
 
 N.B: In windows, due to the encoding issues, you will need to make sure that the
