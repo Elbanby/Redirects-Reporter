@@ -93,20 +93,20 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
     N.B: There is a quicker fix for the http problem. You can go on the script
          and change the following
 
-         ```
-         //original - line 2
-         const https = require('https');
+    ```
+      //original - line 2
+      const https = require('https');
 
-         //change it to
-         const https = require('http');
-         ```
-         Make sure you only change the require https to http and not the
-         variable name, if you chose to go for the quick fix.
+      //change it to
+      const https = require('http');
+    ```
+    Make sure you only change the require https to http and not the
+    variable name, if you chose to go for the quick fix.
 
 # Extra Modifications
-##On the next version:
+## On the next version:
   I will be adding option tags where you only have one script
   and you can simply add `-get` to use the GET Method.
 
   Also I will be adding the option to specify if it is an http or https.
-  `-http` and default will be https. 
+  `-http` and default will be https.
