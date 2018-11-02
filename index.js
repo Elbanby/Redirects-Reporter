@@ -2,6 +2,9 @@ const fs = require('fs');
 const https = require('https');
 const readline = require('readline');
 
+//Custom module to expose credientials
+const credentials = require('./credentials');
+
 const inputFile = process.argv[2];
 const outputFile = process.argv[3];
 
@@ -12,8 +15,8 @@ const outStream = fs.createWriteStream(resultPath + outputFile);
 
 const rl = readline.createInterface(inStream, outStream);
 
-const username = ``;
-const password = ``;
+const username = credentials.username;
+const password = credentials.password;
 const auth = "Basic " + new Buffer(`${username}:${password}`).toString("base64");
 
 const bulk = 100;
