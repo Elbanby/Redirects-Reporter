@@ -77,6 +77,8 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
   1- Currently the script sends a 100 request at a given moment.
 
   2- Currently the script is using https only and will not work on http.  
+  
+  3- The script only works with .com domain. 
 
 
 ### Solutions
@@ -102,6 +104,8 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
  ```
    Make sure you only change the require https to http and not the
    variable name, if you chose to go for the quick fix.
+   
+  3- Add Regex to determaine any possible domain.
 
 # Extra Modifications
 ## On the next version:
