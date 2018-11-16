@@ -3,7 +3,7 @@ const https = require('https');
 const readline = require('readline');
 
 //Custom module to expose credientials
-const credentials = require('./credentials');
+const credentials = require('./credentials/credentials.js');
 
 const inputFile = process.argv[2];
 const outputFile = process.argv[3];
