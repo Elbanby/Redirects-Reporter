@@ -165,7 +165,7 @@ function handleResponse(urlObj, res) {
     //this means the link already has a result
     if (urlObj.redirected) {
 
-      str = `${urlObj.fullURL}\t ${urlObj.statusCode}\t ${urlObj.host}${urlObj.path}\t ${urlObj.finalStatusCode}\n`.toString('utf8');
+      str = `${urlObj.fullURL}\t ${urlObj.statusCode}\t https://${urlObj.host}${urlObj.path}\t ${urlObj.finalStatusCode}\n`.toString('utf8');
     } else {
       str = `${urlObj.fullURL}\t ${res.statusCode}\t 'no redirection'\t ${res.statusCode}\n`.toString('utf8');
     }

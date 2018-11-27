@@ -1,7 +1,7 @@
 const fs = require('fs');
 const https = require('https');
 const readline = require('readline');
-const urlParser = require('url'); 
+const urlParser = require('url');
 
 const inputFile = process.argv[2];
 const outputFile = process.argv[3];
@@ -198,7 +198,7 @@ function handleError(urlObj, err){
         urlObjArray.push(urlObj);
     } else {
         console.log('Dead link ' + err);
-        append(resultPath + 'error_' + outputFile, `${urlObj.fullUrl}\t ${err}`);
+        append(resultPath + 'error_' + outputFile, `${urlObj.fullUrl}\t ${err}\n`);
     }
     hasNext();
 }
