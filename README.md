@@ -89,7 +89,7 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
 ### Solutions
 
 
-  2- Implement a function that sends the requests with http if the urls are
+  1- Implement a function that sends the requests with http if the urls are
      using http.
 
 
