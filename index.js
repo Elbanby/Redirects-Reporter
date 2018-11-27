@@ -1,6 +1,7 @@
 const fs = require('fs');
 const https = require('https');
 const readline = require('readline');
+const urlParser = require('url');
 
 //Custom module to expose credientials
 const credentials = require('./credentials/credentials.js');
@@ -19,7 +20,21 @@ const username = credentials.username;
 const password = credentials.password;
 const auth = "Basic " + new Buffer(`${username}:${password}`).toString("base64");
 
-const bulk = 100;
+const programOptions = (function() {
+  let argv = process.argv;
+  let options = {};
+
+  let req = '--req:';
+  let method = '--method:'
+
+  for (let i = 3 ; i < process.argv.length ; i++) {
+    (argv[i].indexOf(req) > -1)? (options.numReq = argv[i].substring(req.length)): (options.numReq = 5);
+    (argv[i].indexOf(method) > -1)? (options.method = argv[i].substring(method.length).toUpperCase()): (options.method = 'HEAD');
+  }
+  return options;
+}());
+
+const bulk = programOptions.numReq;
 
 var urlObjArray = [];
 var numUrls = 0;
@@ -63,13 +78,9 @@ function urlObjConstruct(url,host,path,index) {
 }
 
 function getUrlInfo(url) {
-  let hostBegin = url.indexOf('https://');
-  let hostEnd = url.indexOf('.com/');
-  let host = url.substring(hostBegin + getLength('https://') , hostEnd + getLength('.com') ) ;
-  let path = url.substring(url.indexOf(host) + getLength(host));
-  if (hostEnd === -1) {
-      path = '';
-  }
+  let parsedUrl = urlParser.parse(url);
+  let host = parsedUrl.host ;
+  let path = parsedUrl.path;
   return { host, path };
 }
 
@@ -89,8 +100,6 @@ function main() {
   } else {
     send(urlObjArray[index]);
   }
-
-
 }
 
 function send(urlObj) {
@@ -115,7 +124,7 @@ function get(urlObj) {
   console.log('Request sent to index ' + urlObj.index);
 
   const options = {
-    method: "HEAD",
+    method: programOptions.method,
     host: urlObj.host,
     path: urlObj.path,
     followAllRedirects: true,
@@ -126,6 +135,12 @@ function get(urlObj) {
 
   var req = https.request(options, (res) => {
     returnedReq++;
+
+    if (options.method === 'GET') {
+      res.on('data', (data)=> {});
+      res.on('end',()=>{});
+    }
+
     handleResponse(urlObj,res);
   });
 
