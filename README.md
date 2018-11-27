@@ -50,6 +50,16 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
      script to run. There is no significant changes. It only complies to the
      file system module in NodeJs.
 
+#### Options 
+  
+  There are currently two options on this modified version. 
+  
+    1- Now you can control the number of requests you sends by passing --req:<number of requests> by deafult its 5 
+       `example: node index.js input.txt output.txt --req:100`
+
+    2- Now you can specify the HTTPS method you would like to use. by passing --method:<Method Type> deafults to HEAD 
+       `example: node index.js input.txt output.txt --method:get`
+       
 #### About the results     
 
     The Script generates results that looks as follows.
@@ -74,21 +84,12 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
 
 ###  Limitations        
 
-  1- Currently the script sends a 100 request at a given moment.
-
-  2- Currently the script is using https only and will not work on http.  
-  
-  3- The script only works with .com domain. 
-
+  1- Currently the script is using https only and will not work on http.  
 
 ### Solutions
 
-  1- If your server can handle more than that without timing out constantly
-     and closing the socket, feel free to increase the value of the 'bulk'
-     variable in the script.
 
-
-  2- Implement a function that sends the requests with http if the urls are
+  1- Implement a function that sends the requests with http if the urls are
      using http.
 
 
@@ -104,13 +105,8 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
  ```
    Make sure you only change the require https to http and not the
    variable name, if you chose to go for the quick fix.
-   
-  3- Add Regex to determaine any possible domain.
 
 # Extra Modifications
 ## On the next version:
-  I will be adding option tags where you only have one script
-  and you can simply add `-get` to use the GET Method.
-
-  Also I will be adding the option to specify if it is an http or https.
+  I will be adding the option to specify if it is an http or https.
   `-http` and default will be https.
