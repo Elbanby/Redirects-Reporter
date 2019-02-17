@@ -23,7 +23,7 @@ set and it tries to test them as fast as possible.
   3- run the following command
 
   ```
-    node index.js input.txt result.txt
+    node index.js input.txt result.csv
   ```
 
   N.B: For the input and output files you can name them anything you like.
@@ -40,7 +40,7 @@ set and it tries to test them as fast as possible.
 
 
   ```
-    node index.js input.txt result.txt
+    node index.js input.txt result.csv
   ```
 
 N.B: In windows, due to the encoding issues, you will need to make sure that the
@@ -58,7 +58,7 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
        `example: node index.js input.txt output.txt --req:100`
 
     2- Now you can specify the HTTPS method you would like to use. by passing --method:<Method Type> deafults to HEAD 
-       `example: node index.js input.txt output.txt --method:get`
+       `example: node index.js input.txt output.csv --method:get`
        
 #### About the results     
 
@@ -69,7 +69,7 @@ N.B: In windows, due to the encoding issues, you will need to make sure that the
     It is a tab separated results. As some urls do have commas, hence a csv is
     messy looking.
 
-    N.B: Import the result.txt (any result file), to Excel or any similar
+    N.B: Import the result.csv (any result file), to Excel or any similar
          software for clear organized looking output.
 
 #### Credentials
